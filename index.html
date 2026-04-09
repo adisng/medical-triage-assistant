@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI-powered medical triage assistant using Gemini AI and Google Services" />
+  <title>Medical Triage Assistant</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <a href="#chat-messages" class="skip-link">Skip to main content</a>
+  <header>
+    <div class="header-left">
+      <div class="logo">+</div>
+      <div>
+        <h1>Medical Triage Assistant</h1>
+        <p>Gemini AI & Google Services</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" id="clear-chat-btn" title="Clear Chat" aria-label="Clear Chat">🗑️</button>
+      <button class="icon-btn" id="theme-toggle" title="Toggle Dark Mode" aria-label="Toggle Theme">🌓</button>
+    </div>
+  </header>
+
+  <div class="disclaimer-bar">
+    ⚠ This tool provides general guidance only. In an emergency, call emergency services immediately.
+  </div>
+
+  <div class="main">
+
+    <!-- Left: Chat panel -->
+    <div class="chat-panel" role="main" aria-label="Medical triage chat">
+      <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-label="Triage conversation"></div>
+      <div class="chat-input-area">
+        <div class="input-wrapper">
+          <textarea
+            id="chat-input"
+            placeholder="Describe your symptoms..."
+            rows="1"
+            aria-label="Describe your symptoms"
+          ></textarea>
+        </div>
+        <button class="send-btn" id="send-btn" aria-label="Send message">➤</button>
+      </div>
+    </div>
+
+    <!-- Right: Side panel -->
+    <div class="side-panel">
+
+      <!-- Quick symptom selector -->
+      <div class="panel-card">
+        <h3>Quick symptom selector</h3>
+        <div class="symptom-checklist" role="group" aria-label="Common symptoms">
+          <button class="symptom-tag" data-symptom="fever">🌡 Fever</button>
+          <button class="symptom-tag" data-symptom="chest pain">💔 Chest pain</button>
+          <button class="symptom-tag" data-symptom="severe headache">🧠 Severe headache</button>
+          <button class="symptom-tag" data-symptom="difficulty breathing">🫁 Difficulty breathing</button>
+          <button class="symptom-tag" data-symptom="nausea and vomiting">🤢 Nausea / vomiting</button>
+          <button class="symptom-tag" data-symptom="dizziness">😵 Dizziness</button>
+          <button class="symptom-tag" data-symptom="rash">🩹 Skin rash</button>
+          <button class="symptom-tag" data-symptom="sore throat and cough">🤧 Sore throat / cough</button>
+          <button class="symptom-tag" data-symptom="abdominal pain">🫃 Abdominal pain</button>
+          <button class="symptom-tag" data-symptom="joint pain">🦴 Joint pain</button>
+        </div>
+        <button class="btn btn-outline" id="use-selected-btn" style="width:100%;margin-top:10px;">Use selected symptoms</button>
+      </div>
+
+      <!-- Calendar status -->
+      <div class="panel-card">
+        <h3>📅 Appointment booking</h3>
+        <div class="calendar-status" id="calendar-status">
+          Use the chat to get a triage result — if you need to see a doctor, you'll be able to book directly to Google Calendar.
+        </div>
+      </div>
+
+      <!-- Map -->
+      <div class="panel-card">
+        <h3>📍 Nearby clinics</h3>
+        <div id="map-container">Map loads when clinics are needed</div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
