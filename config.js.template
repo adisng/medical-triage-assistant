@@ -1,0 +1,36 @@
+/**
+ * config.js.template — API key configuration template
+ *
+ * SETUP (one-time):
+ *   cp config.js.template config.js
+ *   # Then edit config.js and fill in your real API keys below.
+ *   # config.js is excluded from version control via .gitignore — NEVER commit real keys.
+ *
+ * WHERE TO GET KEYS:
+ *
+ *   GEMINI_API_KEY
+ *     → https://aistudio.google.com/app/apikey
+ *     → Free tier available. Enable "Generative Language API".
+ *
+ *   GOOGLE_CALENDAR_CLIENT_ID
+ *     → https://console.cloud.google.com/
+ *     → APIs & Services → Credentials → Create OAuth 2.0 Client ID
+ *     → Application type: Web application
+ *     → Authorized JavaScript origins: http://localhost:8080
+ *     → Enable "Google Calendar API" in the API library.
+ *
+ *   GOOGLE_MAPS_API_KEY
+ *     → https://console.cloud.google.com/
+ *     → APIs & Services → Library → Enable "Maps Embed API"
+ *     → Create an API key and restrict it to Maps Embed API.
+ *
+ * SECURITY NOTE:
+ *   In production, proxy all API calls through a backend (e.g. Firebase Functions)
+ *   so keys are never exposed to the client. This config is for local demo only.
+ */
+const CONFIG = {
+  GEMINI_API_KEY:            "YOUR_GEMINI_API_KEY_HERE",
+  GOOGLE_CALENDAR_CLIENT_ID: "YOUR_CLIENT_ID.apps.googleusercontent.com",
+  GOOGLE_MAPS_API_KEY:       "YOUR_MAPS_API_KEY_HERE",
+  GOOGLE_API_SCOPES:         "https://www.googleapis.com/auth/calendar.events",
+};

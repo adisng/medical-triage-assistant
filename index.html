@@ -1,87 +1,184 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="AI-powered medical triage assistant using Gemini AI and Google Services" />
+  <meta name="description" content="AI-powered medical triage assistant — assess symptom urgency, book appointments, and find nearby clinics." />
+  <meta name="theme-color" content="#4f46e5" />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Triage AI" />
+
+  <!-- Open Graph -->
+  <meta property="og:title"        content="Medical Triage Assistant" />
+  <meta property="og:description"  content="AI-powered symptom triage — assess urgency, book appointments, find nearby clinics." />
+  <meta property="og:type"         content="website" />
+  <meta name="twitter:card"        content="summary" />
+  <meta name="twitter:title"       content="Medical Triage Assistant" />
+  <meta name="twitter:description" content="AI-powered symptom triage powered by Gemini AI & Google Services." />
+
+  <!-- Content-Security-Policy -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self';
+             script-src 'self' https://accounts.google.com https://apis.google.com;
+             style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+             font-src https://fonts.gstatic.com;
+             connect-src https://generativelanguage.googleapis.com https://www.googleapis.com https://accounts.google.com;
+             frame-src https://www.google.com;
+             img-src 'self' data: https:;
+             upgrade-insecure-requests;" />
+
   <title>Medical Triage Assistant</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+  <link rel="stylesheet" href="style.css?v=4" />
 </head>
+
 <body>
-  <a href="#chat-messages" class="skip-link">Skip to main content</a>
-  <header>
+  <!-- Skip nav for keyboard users -->
+  <a href="#chat-messages" class="skip-link">Skip to chat</a>
+
+  <header role="banner">
     <div class="header-left">
-      <div class="logo">+</div>
+      <div class="logo" aria-hidden="true">+</div>
       <div>
         <h1>Medical Triage Assistant</h1>
-        <p>Gemini AI & Google Services</p>
+        <p class="header-sub">Powered by Gemini AI &amp; Google Services</p>
       </div>
     </div>
     <div class="header-right">
-      <button class="icon-btn" id="clear-chat-btn" title="Clear Chat" aria-label="Clear Chat">🗑️</button>
-      <button class="icon-btn" id="theme-toggle" title="Toggle Dark Mode" aria-label="Toggle Theme">🌓</button>
+      <button class="icon-btn" id="history-btn" title="View session history" aria-label="View session history" aria-expanded="false">📋</button>
+      <button class="icon-btn" id="clear-chat-btn" title="Clear chat" aria-label="Clear chat conversation">🗑️</button>
+      <button class="icon-btn" id="theme-toggle" title="Toggle dark mode" aria-label="Toggle dark mode" aria-pressed="false">🌓</button>
     </div>
   </header>
 
-  <div class="disclaimer-bar">
-    ⚠ This tool provides general guidance only. In an emergency, call emergency services immediately.
+  <!-- Persistent disclaimer -->
+  <div class="disclaimer-bar" role="note" aria-label="Medical disclaimer">
+    ⚠ General guidance only — not a substitute for professional medical advice. In emergencies, call 112 / 911 immediately.
   </div>
 
   <div class="main">
 
-    <!-- Left: Chat panel -->
-    <div class="chat-panel" role="main" aria-label="Medical triage chat">
-      <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-label="Triage conversation"></div>
-      <div class="chat-input-area">
+    <!-- ── Left: Chat panel ───────────────────────────────────────── -->
+    <main class="chat-panel" aria-label="Medical triage conversation">
+
+      <!-- Offline banner -->
+      <div class="offline-banner" id="offline-banner" hidden aria-live="assertive">
+        📶 You appear to be offline. Responses may not work until connectivity is restored.
+      </div>
+
+      <div class="chat-messages" id="chat-messages"
+           role="log"
+           aria-live="polite"
+           aria-atomic="false"
+           aria-label="Triage conversation history"
+           tabindex="0">
+      </div>
+
+      <!-- Input area -->
+      <div class="chat-input-area" role="group" aria-label="Message composer">
+        <label for="chat-input" class="sr-only">Describe your symptoms</label>
         <div class="input-wrapper">
           <textarea
             id="chat-input"
-            placeholder="Describe your symptoms..."
+            placeholder="Describe your symptoms… (e.g. I have had a fever and sore throat for 2 days)"
             rows="1"
+            maxlength="1000"
             aria-label="Describe your symptoms"
+            aria-describedby="char-counter"
+            autocomplete="off"
+            spellcheck="true"
           ></textarea>
+          <span id="char-counter" class="char-counter" aria-live="polite" aria-atomic="true">0 / 1000</span>
         </div>
-        <button class="send-btn" id="send-btn" aria-label="Send message">➤</button>
-      </div>
-    </div>
 
-    <!-- Right: Side panel -->
-    <div class="side-panel">
+        <button class="icon-btn voice-btn" id="voice-btn" hidden
+          aria-label="Use voice input"
+          aria-pressed="false"
+          title="Speak your symptoms">🎤</button>
+
+        <button class="send-btn" id="send-btn" aria-label="Send message" title="Send (Enter)">
+          <svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2 21l21-9L2 3v7l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+    </main>
+
+    <!-- ── Right: Side panel ─────────────────────────────────────── -->
+    <aside class="side-panel" aria-label="Tools and information panel">
+
+      <!-- Language selector -->
+      <section class="panel-card" aria-labelledby="lang-heading">
+        <h2 id="lang-heading" class="panel-heading">🌐 Language</h2>
+        <label for="lang-selector" class="sr-only">Select language</label>
+        <select id="lang-selector" class="lang-select" aria-label="Select interface language">
+          <option value="en">🇬🇧 English</option>
+          <option value="es">🇪🇸 Español</option>
+        </select>
+      </section>
 
       <!-- Quick symptom selector -->
-      <div class="panel-card">
-        <h3>Quick symptom selector</h3>
-        <div class="symptom-checklist" role="group" aria-label="Common symptoms">
-          <button class="symptom-tag" data-symptom="fever">🌡 Fever</button>
-          <button class="symptom-tag" data-symptom="chest pain">💔 Chest pain</button>
-          <button class="symptom-tag" data-symptom="severe headache">🧠 Severe headache</button>
-          <button class="symptom-tag" data-symptom="difficulty breathing">🫁 Difficulty breathing</button>
-          <button class="symptom-tag" data-symptom="nausea and vomiting">🤢 Nausea / vomiting</button>
-          <button class="symptom-tag" data-symptom="dizziness">😵 Dizziness</button>
-          <button class="symptom-tag" data-symptom="rash">🩹 Skin rash</button>
-          <button class="symptom-tag" data-symptom="sore throat and cough">🤧 Sore throat / cough</button>
-          <button class="symptom-tag" data-symptom="abdominal pain">🫃 Abdominal pain</button>
-          <button class="symptom-tag" data-symptom="joint pain">🦴 Joint pain</button>
+      <section class="panel-card" aria-labelledby="symptom-heading">
+        <h2 id="symptom-heading" class="panel-heading">🩺 Quick symptom selector</h2>
+        <div class="symptom-checklist" role="group" aria-label="Select symptoms you are experiencing">
+          <button class="symptom-tag" data-symptom="fever" aria-pressed="false">🌡 Fever</button>
+          <button class="symptom-tag" data-symptom="chest pain" aria-pressed="false">💔 Chest pain</button>
+          <button class="symptom-tag" data-symptom="severe headache" aria-pressed="false">🧠 Severe headache</button>
+          <button class="symptom-tag" data-symptom="difficulty breathing" aria-pressed="false">🫁 Difficulty breathing</button>
+          <button class="symptom-tag" data-symptom="nausea and vomiting" aria-pressed="false">🤢 Nausea / vomiting</button>
+          <button class="symptom-tag" data-symptom="dizziness" aria-pressed="false">😵 Dizziness</button>
+          <button class="symptom-tag" data-symptom="rash" aria-pressed="false">🩹 Skin rash</button>
+          <button class="symptom-tag" data-symptom="sore throat and cough" aria-pressed="false">🤧 Sore throat / cough</button>
+          <button class="symptom-tag" data-symptom="abdominal pain" aria-pressed="false">🫃 Abdominal pain</button>
+          <button class="symptom-tag" data-symptom="joint pain" aria-pressed="false">🦴 Joint pain</button>
+          <button class="symptom-tag" data-symptom="blurred vision" aria-pressed="false">👁 Blurred vision</button>
+          <button class="symptom-tag" data-symptom="back pain" aria-pressed="false">🔙 Back pain</button>
         </div>
-        <button class="btn btn-outline" id="use-selected-btn" style="width:100%;margin-top:10px;">Use selected symptoms</button>
-      </div>
+        <button class="btn btn-outline full-width" id="use-selected-btn">Use selected symptoms</button>
+      </section>
+
+      <!-- Triage history summary -->
+      <section class="panel-card" aria-labelledby="history-heading" id="history-panel" hidden>
+        <h2 id="history-heading" class="panel-heading">🕐 Session History</h2>
+        <ol class="history-list" id="history-list" aria-label="Previous triage results"></ol>
+      </section>
 
       <!-- Calendar status -->
-      <div class="panel-card">
-        <h3>📅 Appointment booking</h3>
-        <div class="calendar-status" id="calendar-status">
-          Use the chat to get a triage result — if you need to see a doctor, you'll be able to book directly to Google Calendar.
+      <section class="panel-card" aria-labelledby="cal-heading">
+        <h2 id="cal-heading" class="panel-heading">📅 Appointment booking</h2>
+        <div class="calendar-status" id="calendar-status" aria-live="polite" aria-atomic="true">
+          Chat to get a triage result — if a doctor visit is recommended, you can book directly to Google Calendar.
         </div>
-      </div>
+      </section>
 
-      <!-- Map -->
-      <div class="panel-card">
-        <h3>📍 Nearby clinics</h3>
-        <div id="map-container">Map loads when clinics are needed</div>
-      </div>
+      <!-- Nearby clinics map -->
+      <section class="panel-card" aria-labelledby="map-heading">
+        <h2 id="map-heading" class="panel-heading">📍 Nearby clinics</h2>
+        <div id="map-container" role="region" aria-label="Map of nearby clinics" aria-live="polite">
+          <p class="map-placeholder">Map loads when clinics are needed</p>
+        </div>
+      </section>
 
-    </div>
+    </aside>
   </div>
+
+  <!-- Session history modal -->
+  <dialog class="modal" id="history-modal" aria-labelledby="modal-title" aria-modal="true">
+    <div class="modal-inner">
+      <div class="modal-header">
+        <h2 id="modal-title">Session Triage History</h2>
+        <button class="icon-btn" id="close-modal-btn" aria-label="Close history modal">✕</button>
+      </div>
+      <div id="modal-body" class="modal-body" aria-live="polite"></div>
+    </div>
+  </dialog>
 
   <script src="config.js"></script>
   <script src="app.js"></script>

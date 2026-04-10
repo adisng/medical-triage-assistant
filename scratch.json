@@ -1,0 +1,4 @@
+{
+  "contents": [{"role": "user", "parts": [{"text": "I have a headache"}]}],
+  "tools": [{"googleSearch": {}}]
+}
