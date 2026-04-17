@@ -2,6 +2,8 @@
 
 > An AI-powered symptom triage tool that helps users assess urgency, get actionable guidance backed by live Google Search sources, book doctor appointments via Google Calendar, and find nearby clinics via Google Maps — with a full-screen Emergency Mode for critical situations.
 
+**🌍 Live Demo:** [https://medical-triage-assistant-973836490124.us-central1.run.app](https://medical-triage-assistant-973836490124.us-central1.run.app)
+
 ![Medical Triage Assistant Demo](demo.gif)
 ![Medical Triage Assistant Screenshot](Screenshot.png)
 
