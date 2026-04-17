@@ -35,19 +35,19 @@
 </head>
 <body>
   <h1>🧪 Test Suite</h1>
-  <p class="sub">Medical Triage Assistant — Unit Tests</p>
+  <p class="sub">Medical Triage Assistant — Unit + Integration Tests</p>
 
   <div id="test-results">
     <p class="loading">Loading tests…</p>
   </div>
 
   <!--
-    Load app dependencies first so all functions (parseTriageResponse,
-    escapeAttr, sanitizeText, validateInput, isRateLimited, state, etc.)
-    are available before tests.js runs.
+    Load config first so CONFIG is available.
+    Then load app as a module (which exposes globals for tests).
+    Finally load tests after the module has initialised.
   -->
   <script src="config.js"></script>
-  <script src="app.js"></script>
-  <script src="tests.js"></script>
+  <script type="module" src="js/main.js"></script>
+  <script defer src="tests.js"></script>
 </body>
 </html>

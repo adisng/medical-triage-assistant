@@ -25,7 +25,7 @@ docker build -t triage . && docker run -p 8080:8080 -v $(pwd)/config.js:/usr/sha
 
 # 4. Run tests
 # Open http://localhost:8080/test.html
-# All 55 unit + integration tests render in the browser with pass/fail status
+# All 80+ unit + integration tests render in the browser with pass/fail status
 ```
 
 ---
@@ -137,8 +137,9 @@ Any in-flight Gemini request is cancelled when a new message is sent, preventing
 - **Rate limiting**: max 5 requests per 60 seconds (localStorage-persisted)
 - **OAuth token**: stored in-memory only — never `localStorage` — auto-cleared after 1 hour
 - **API keys**: stored in `config.js`, excluded via `.gitignore`; `config.js.template` provided
-- **Nginx headers**: `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `HSTS`, `Permissions-Policy`
+- **Nginx headers**: `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `HSTS`, `Permissions-Policy`, `X-Robots-Tag`
 - **Gemini safety filters**: `BLOCK_MEDIUM_AND_ABOVE` for harassment, hate speech, dangerous content
+- **Non-root container**: Dockerfile uses `nginxinc/nginx-unprivileged:alpine` — no root process
 - **Production note**: In production, proxy Gemini and Calendar calls through a serverless backend (Firebase Functions or similar) so API keys are never exposed to the client.
 
 ---
@@ -168,32 +169,46 @@ Any in-flight Gemini request is cancelled when a new message is sent, preventing
 
 ## Testing
 
-55 tests across unit + integration coverage in `tests.js`, rendered in `test.html`:
+80+ tests across unit + integration coverage in `tests.js`, rendered in `test.html`:
 
 | Area | Tests |
 |---|---|
-| `parseTriageResponse` | Valid JSON, markdown fences, fallback, urgency clamping, missing arrays |
-| `escapeAttr` | Single/double quotes, `<>`, `&`, empty, null, undefined, numeric coercion |
-| `sanitizeText` | `<script>`, `<img onerror>`, normal text, empty, null, emoji |
-| `validateInput` | Empty, whitespace, too long, invalid chars, valid, edge cases |
-| `isRateLimited` (localStorage) | Under limit, at limit, expired, mixed expired+fresh |
-| `validateBeforeSend` | Offline, rate-limited, empty, valid |
-| `captureAndClearInput` | Returns trimmed value, clears input field |
-| `hasEmergencyKeywords` | Positive matches, negative cases, single-keyword no-match |
-| `checkUrgencyEscalation` | Low→Medium, Medium→High, improvement, null previous |
-| `makeSourcesSection` | 3 visible chips, "+ N more" button, tooltip with URL |
+| `parseTriageResponse` | Valid JSON, markdown fences, fallback, urgency clamping, missing arrays, high urgency, non-string fields, whitespace fences |
+| `escapeAttr` | Single/double quotes, `<>`, `&`, empty, null, undefined, numeric coercion, combined attack vectors, boolean input |
+| `sanitizeText` | `<script>`, `<img onerror>`, normal text, empty, null, emoji, nested HTML, event handlers, SVG injection |
+| `validateInput` | Empty, whitespace, too long, invalid chars (`<>{}` individually), valid, edge cases, safe special chars |
+| `isRateLimited` (localStorage) | Under limit, at limit, expired, mixed expired+fresh, exactly-at-limit, corrupted localStorage |
+| `validateBeforeSend` | Offline, rate-limited, empty, valid, too long, invalid chars |
+| `captureAndClearInput` | Returns trimmed value, clears input field, empty input, single word |
+| `hasEmergencyKeywords` | Positive matches (all keyword sets), negative cases, case insensitivity, partial keyword no match |
+| `checkUrgencyEscalation` | Low→Medium, Medium→High, Low→Emergency, improvement, null previous, same-level no-op |
+| `makeSourcesSection` | 3 visible chips, "+ N more" button, tooltip with URL, single source, link attributes, aria-labels |
 | Language preference | localStorage get/set, default fallback |
-| `conversationHistory` | Trimmed to MAX_HISTORY_TURNS × 2 |
-| `updateCharCounter` | Correct count, counter-warn, counter-over |
-| **Integration** | Full triage flow with mock fetch — asserts DOM update with mock summary |
+| `conversationHistory` | Trimmed to MAX_HISTORY_TURNS × 2, no-trim when under limit |
+| `updateCharCounter` | Correct count, counter-warn, counter-over, no-warn at 50%, empty input |
+| State management | Type checks for state properties |
+| Security regression | Attribute breakout, style injection, template literal injection |
+| Constants | URGENCY_LEVELS validation |
+| **Integration** | Full triage flow with mock fetch — DOM update assertion |
+| **Integration** | Error handling flow — error bubble rendering assertion |
 
 ---
 
 ## Code Quality
 
-- `"use strict"` enforced throughout
+- **ES6 Modules** — Code split into 9 focused modules under `js/`:
+  - `utils/constants.js` — Named constants for all magic values
+  - `utils/state.js` — Centralised mutable state
+  - `utils/security.js` — XSS prevention utilities
+  - `utils/helpers.js` — debounce, sleep, SR announcements
+  - `api/gemini.js` — Gemini API client with retry and parsing
+  - `ui/chat.js` — Chat rendering, triage cards, source chips
+  - `ui/emergency.js` — Emergency detection and overlay
+  - `services/calendar.js` — Google Calendar OAuth + booking
+  - `services/maps.js` — Google Maps Embed integration
+  - `main.js` — Orchestrator and event wiring
+- `"use strict"` enforced in every module
 - Full JSDoc on every exported/key function
-- Named constants for all magic values
 - Zero `innerHTML` from untrusted data — all DOM via `createElement` / `textContent`
 - `sendMessage()` refactored into 8 single-responsibility steps (each independently testable)
 - `debounce()` on `scrollToBottom` to avoid layout thrashing
@@ -206,19 +221,33 @@ Any in-flight Gemini request is cancelled when a new message is sent, preventing
 ## File Structure
 
 ```
-├── index.html            — Semantic HTML5 UI: chat, symptom selector, calendar, map, modal, lang selector
-├── app.js                — Core logic: Gemini, Grounding, Calendar, Maps, voice, emergency mode
-├── style.css             — Design system: tokens, responsive layout, emergency mode, accessibility
-├── sw.js                 — Service Worker: stale-while-revalidate caching, offline fallback
-├── manifest.json         — PWA manifest
-├── config.js             — API keys (gitignored — never committed)
-├── config.js.template    — Template for setup (safe to commit)
-├── tests.js              — 55 unit + integration tests
-├── test.html             — Browser-based test runner
-├── Dockerfile            — nginx:alpine container with health check
-├── nginx.conf            — Gzip, caching, SW-safe headers, security headers
-├── .gitignore            — Excludes config.js and OS/editor artifacts
-└── README.md             — This file
+├── index.html              — Semantic HTML5 UI: chat, symptom selector, calendar, map, modal
+├── js/
+│   ├── main.js             — Entry point: orchestration + event wiring
+│   ├── api/
+│   │   └── gemini.js       — Gemini API client, retry, response parsing
+│   ├── ui/
+│   │   ├── chat.js         — Chat rendering, triage cards, source chips, focus trap
+│   │   └── emergency.js    — Emergency keyword detection + full-screen overlay
+│   ├── services/
+│   │   ├── calendar.js     — Google Calendar OAuth + appointment booking
+│   │   └── maps.js         — Google Maps Embed with geolocation fallback
+│   └── utils/
+│       ├── constants.js    — Named constants (no magic numbers)
+│       ├── state.js        — Centralised mutable state
+│       ├── security.js     — escapeAttr, sanitizeText, validateInput
+│       └── helpers.js      — debounce, sleep, SR announcements
+├── style.css               — Design system: tokens, responsive layout, emergency mode, a11y
+├── sw.js                   — Service Worker: stale-while-revalidate caching, offline fallback
+├── manifest.json           — PWA manifest
+├── config.js               — API keys (gitignored — never committed)
+├── config.js.template      — Template for setup (safe to commit)
+├── tests.js                — 80+ unit + integration tests
+├── test.html               — Browser-based test runner
+├── Dockerfile              — nginx-unprivileged:alpine container with health check
+├── nginx.conf              — Gzip, caching, SW-safe headers, security headers
+├── .gitignore              — Excludes config.js and OS/editor artifacts
+└── README.md               — This file
 ```
 
 ---
